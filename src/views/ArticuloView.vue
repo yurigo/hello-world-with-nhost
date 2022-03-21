@@ -1,20 +1,32 @@
 <script setup>
-import { ref, watch } from "vue";
+import { ref, toRefs, reactive, computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import { NhostClient } from "@nhost/nhost-js";
-import Article from "../components/Article.vue";
+import Article from "@/components/Article.vue";
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+// function sleep(ms) {
+//   return new Promise(resolve => setTimeout(resolve, ms));
+// }
 
-// simmulación de una carga de 1 segundo al entrar por primera vez:
-await sleep(1000);
+// // simmulación de una carga de 1 segundo al entrar por primera vez:
+// await sleep(1000);
 
 // watch route params
 const route = useRoute();
 
 const article = ref({});
+
+const name = computed(() => {
+  return article?.value?.author?.name;
+});
+
+const average = computed(() => {
+  return article?.value?.author?.articles_aggregate?.aggregate?.avg?.rating;
+});
+
+const articles = computed(() => {
+  return article?.value?.author?.articles;
+});
 
 watch(() => route.params.id, async (newVal) => {
   console.log("route.params.id: " + newVal);
@@ -36,63 +48,59 @@ async function load(id){
     });
 
     const graphqlEndpoint = nhost.graphql.getUrl();
-    console.log(graphqlEndpoint);
+    // console.log(graphqlEndpoint);
 
-    const { data, error } = await nhost.graphql.request(`{
-            _helloworld_article_by_pk (id: ${id}){
-                id
-                rating
-                title
-                author {
-                name
-                id
-                articles {
-                    id
-                    title
-                    rating
-                }
-                articles_aggregate {
-                    aggregate {
-                    avg {
-                        rating
-                    }
-                    }
-                }
-                }
-            }
-            }
+    const { data, error } = await nhost.graphql.request(`
+query MyQuery {
+  _helloworld_article_by_pk(id: ${id}) {
+    id
+    rating
+    title
+    author {
+      name
+      id
+      articles {
+        id
+        title
+        rating
+      }
+      articles_aggregate {
+        aggregate {
+          avg {
+            rating
+          }
+        }
+      }
+    }
+  }
+}
+
             `);
 
     if (error) {
-        console.log(error);
+        console.log("error", error);
     }
 
-    console.log(data);
-
-    // article.value = data._helloworld_article_by_pk;
-    article.value = data._helloworld_article_by_pk;
+    article.value =  data._helloworld_article_by_pk
+    console.log("article: " , article.value);
 }
 
 </script>
 
 <template>
-    <main>
+
+    <main v-if="article">
         <!-- {{ article }} -->
         <h1>Articulo</h1>
         <!-- <Article v-for="article in articles" :key="article.id" :article="article" /> -->
-        <span class="article-title">
-            
-            {{ article.title }} 
-            </span>
-        <span class="badge">
-            {{ article.rating }}
-        </span>
+        <span class="article-title">{{ article?.title }} </span>
+        <span class="badge">{{ article?.rating }}</span>
 
         <div>
             <h2>Autor</h2>
-            <p>{{ article?.author?.name }}</p>
+            <p>{{ name }}</p>
 
-            <h2>Articulos (media: {{article?.author?.articles_aggregate.aggregate.avg.rating}})</h2>
+            <h2>Articulos (media: {{ average }})</h2>
             <!-- <ul>
                 <li v-for="article in article?.author?.articles" :key="article.id">
                     <router-link :to="{ name: 'article', params: { id: article.id } }" >
@@ -100,7 +108,9 @@ async function load(id){
                     </router-link> <br />
                 </li>
             </ul> -->
-            <Article v-for="article in article?.author?.articles" :key="article.id" :article="article" :selected="article.id === this.article.id" />
+            <div v-if="articles">
+            <Article v-for="a in articles" :key="a?.id" :article="a" :selected="a.id === article.id" />
+            </div>
 
 
         </div>
