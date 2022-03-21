@@ -1,5 +1,5 @@
 <script setup>
-import { ref, toRefs, reactive, computed, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import { NhostClient } from "@nhost/nhost-js";
 import Article from "@/components/Article.vue";
@@ -11,9 +11,7 @@ import Article from "@/components/Article.vue";
 // // simmulación de una carga de 1 segundo al entrar por primera vez:
 // await sleep(1000);
 
-// watch route params
-const route = useRoute();
-
+// necesito reactividad (se actualiza con cada cambio de ruta watch route.params.id!)
 const article = ref({});
 
 const name = computed(() => {
@@ -27,6 +25,8 @@ const average = computed(() => {
 const articles = computed(() => {
   return article?.value?.author?.articles;
 });
+
+const route = useRoute();
 
 watch(() => route.params.id, async (newVal) => {
   console.log("route.params.id: " + newVal);
@@ -88,11 +88,8 @@ query MyQuery {
 </script>
 
 <template>
-
     <main v-if="article">
-        <!-- {{ article }} -->
         <h1>Articulo</h1>
-        <!-- <Article v-for="article in articles" :key="article.id" :article="article" /> -->
         <span class="article-title">{{ article?.title }} </span>
         <span class="badge">{{ article?.rating }}</span>
 
@@ -101,21 +98,10 @@ query MyQuery {
             <p>{{ name }}</p>
 
             <h2>Articulos (media: {{ average }})</h2>
-            <!-- <ul>
-                <li v-for="article in article?.author?.articles" :key="article.id">
-                    <router-link :to="{ name: 'article', params: { id: article.id } }" >
-                        {{ article.title }} - {{ article.rating }}
-                    </router-link> <br />
-                </li>
-            </ul> -->
             <div v-if="articles">
             <Article v-for="a in articles" :key="a?.id" :article="a" :selected="a.id === article.id" />
             </div>
-
-
         </div>
-
-
     </main>
 </template>
 

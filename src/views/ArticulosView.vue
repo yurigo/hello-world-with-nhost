@@ -20,6 +20,7 @@ if (error) {
     console.log(error);
 }
 
+// no necesito reactividad (no se actualiza)
 const articles = data._helloworld_article;
 </script>
 
